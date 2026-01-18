@@ -1,65 +1,146 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { allocation, performance, summary, transactions } from "./data/mock";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  Tooltip,
+} from "recharts";
+
+const COLORS = ["#6C8CFF", "#34D399", "#FBBF24", "#A78BFA"]; // if you want, we can remove custom colors later
+
+function formatMoney(n: number) {
+  return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
+}
+
+export default function Page() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-[#0B0F17] text-white">
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <div className="grid grid-cols-12 gap-6">
+          {/* Sidebar */}
+          <aside className="col-span-12 md:col-span-3 rounded-2xl bg-[#0F1624] p-5 border border-white/5">
+            <div className="text-lg font-semibold">Web3 Analytics</div>
+            <div className="mt-6 space-y-2 text-white/80">
+              {["Dashboard", "Wallet Analytics", "Tokens", "Settings"].map((item) => (
+                <div
+                  key={item}
+                  className={`rounded-xl px-4 py-3 hover:bg-white/5 cursor-pointer ${
+                    item === "Dashboard" ? "bg-white/5 text-white" : ""
+                  }`}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </aside>
+
+          {/* Main */}
+          <main className="col-span-12 md:col-span-9 space-y-6">
+            <header className="flex items-center justify-between">
+              <h1 className="text-2xl font-semibold">Dashboard</h1>
+              <div className="text-sm text-white/70">Dark Mode</div>
+            </header>
+
+            {/* Top cards */}
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card title="Portfolio Balance">
+                <div className="text-2xl font-semibold">{formatMoney(summary.portfolioBalance)}</div>
+                <div className="text-sm text-emerald-400 mt-1">+{summary.performancePct}%</div>
+              </Card>
+              <Card title="7d Performance">
+                <div className="text-2xl font-semibold">+{formatMoney(summary.performance7d)}</div>
+                <div className="text-sm text-emerald-400 mt-1">last 7 days</div>
+              </Card>
+              <Card title="Recent Activity">
+                <div className="text-2xl font-semibold">{summary.recentTransactionsCount}</div>
+                <div className="text-sm text-white/60 mt-1">transactions</div>
+              </Card>
+            </section>
+
+            {/* Charts */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card title="Token Allocation">
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={allocation} dataKey="value" innerRadius={55} outerRadius={80}>
+                        {allocation.map((_, idx) => (
+                          <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-white/70">
+                  {allocation.map((a) => (
+                    <div key={a.name} className="flex justify-between">
+                      <span>{a.name}</span>
+                      <span>{a.value}%</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card title="Portfolio Performance">
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={performance}>
+                      <XAxis dataKey="day" stroke="rgba(255,255,255,0.35)" />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="value" stroke="#6C8CFF" strokeWidth={3} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+            </section>
+
+            {/* Table */}
+            <Card title="Recent Transactions">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-white/60">
+                    <tr className="border-b border-white/10">
+                      <th className="py-3 text-left font-medium">Transaction</th>
+                      <th className="py-3 text-left font-medium">Type</th>
+                      <th className="py-3 text-right font-medium">Amount</th>
+                      <th className="py-3 text-right font-medium">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactions.map((t, i) => (
+                      <tr key={i} className="border-b border-white/5">
+                        <td className="py-3">{t.tx}</td>
+                        <td className="py-3 text-white/70">{t.type}</td>
+                        <td className={`py-3 text-right ${t.amount >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                          {t.amount >= 0 ? "+" : "-"}
+                          {formatMoney(Math.abs(t.amount))}
+                        </td>
+                        <td className="py-3 text-right text-white/60">{t.date}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </main>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
+    </div>
+  );
+}
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl bg-[#0F1624] p-5 border border-white/5">
+      <div className="text-sm text-white/70 mb-3">{title}</div>
+      {children}
     </div>
   );
 }
